@@ -1,0 +1,6 @@
+alb_subnet_ids =
+efs_subnet_ids =
+jenkins_controller_subnet_ids =
+route53_domain_name =
+route53_zone_id =
+vpc_id =
