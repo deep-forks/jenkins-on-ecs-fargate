@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-data "aws_vpc" selected {
+data "aws_vpc" "selected" {
   id = var.vpc_id
 }
 
@@ -11,7 +11,7 @@ locals {
 }
 
 
-resource "aws_security_group" efs_security_group {
+resource "aws_security_group" "efs_security_group" {
   name        = "${var.name_prefix}-efs"
   description = "${var.name_prefix} efs security group"
   vpc_id      = var.vpc_id
@@ -34,7 +34,7 @@ resource "aws_security_group" efs_security_group {
 }
 
 
-resource "aws_security_group" jenkins_controller_security_group {
+resource "aws_security_group" "jenkins_controller_security_group" {
   name        = "${var.name_prefix}-controller"
   description = "${var.name_prefix} controller security group"
   vpc_id      = var.vpc_id
@@ -69,7 +69,7 @@ resource "aws_security_group" jenkins_controller_security_group {
 
 
 // ALB
-resource "aws_security_group" alb_security_group {
+resource "aws_security_group" "alb_security_group" {
   count = var.alb_create_security_group ? 1 : 0
 
   name        = "${var.name_prefix}-alb"
@@ -102,7 +102,7 @@ resource "aws_security_group" alb_security_group {
   tags = var.tags
 }
 
-resource "aws_lb" this {
+resource "aws_lb" "this" {
   name               = replace("${var.name_prefix}-crtl-alb", "_", "-")
   internal           = var.alb_type_internal
   load_balancer_type = "application"
@@ -121,13 +121,13 @@ resource "aws_lb" this {
   tags = var.tags
 }
 
-resource "aws_lb_target_group" this {
-  name        = replace("${var.name_prefix}-crtl", "_", "-")
-  port        = var.jenkins_controller_port
-  protocol    = "HTTP"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
-
+resource "aws_lb_target_group" "this" {
+  name                 = replace("${var.name_prefix}-crtl", "_", "-")
+  port                 = var.jenkins_controller_port
+  protocol             = "HTTP"
+  vpc_id               = var.vpc_id
+  target_type          = "ip"
+  deregistration_delay = "30"
   health_check {
     enabled = true
     path    = "/login"
@@ -141,7 +141,7 @@ resource "aws_lb_target_group" this {
   }
 }
 
-resource "aws_lb_listener" http {
+resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
@@ -157,7 +157,7 @@ resource "aws_lb_listener" http {
   }
 }
 
-resource "aws_lb_listener" https {
+resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.this.arn
   port              = 443
   protocol          = "HTTPS"
@@ -170,7 +170,7 @@ resource "aws_lb_listener" https {
   }
 }
 
-resource "aws_lb_listener_rule" redirect_http_to_https {
+resource "aws_lb_listener_rule" "redirect_http_to_https" {
   listener_arn = aws_lb_listener.http.arn
 
   action {
@@ -191,7 +191,7 @@ resource "aws_lb_listener_rule" redirect_http_to_https {
   }
 }
 
-resource "aws_route53_record" this {
+resource "aws_route53_record" "this" {
   count = var.route53_create_alias ? 1 : 0
 
   zone_id = var.route53_zone_id
